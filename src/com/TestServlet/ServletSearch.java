@@ -8,88 +8,61 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.google.gson.*;
-
-
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 /**
- * Servlet implementation class TestServlet
+ * Servlet implementation class ServletSearch
  */
-//@WebServlet("/Main")
-public class ServletMain extends HttpServlet {
+@WebServlet({ "/ServletSearch", "/search" })
+public class ServletSearch extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	private String message;
-
+	private String username = new String();
+	private String password = new String();
+	
+       
     /**
-     * Default constructor. 
+     * @see HttpServlet#HttpServlet()
      */
-    public ServletMain() {
-    	super();
+    public ServletSearch() {
+        super();
+        // TODO Auto-generated constructor stub
     }
 
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
-    
-    public void init() throws ServletException
-    {
-        // Do required initialization
-        message = "Hello World";
-    }
-
-    
-    @Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		doPost(request, response);
-
-	}
-
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
-	 */
-	@Override
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-    	response.setContentType("text/html;charset=UTF-8");
-        PrintWriter out = response.getWriter();
-		String name = request.getParameter("name");
-		String pass = request.getParameter("pass");
-		String index = request.getParameter("index");
-		String url;
-		Gson gson = new Gson();
 		HttpSession session = request.getSession(true);
-
+	    PrintWriter out = response.getWriter();
+		String index = request.getParameter("index");
+		String param = request.getParameter("type");
 		
-			
-        PrintWriter writer = response.getWriter();
-        
-        // build HTML code
-        String htmlResponse = "<html>";
-        
-        if(name == null || pass == null || name.isEmpty() || pass.isEmpty()){
-        	url = "/login.html";
-        	getServletContext().getRequestDispatcher(url).forward(request, response);;
-        	
-        	
-        }else{
-        	
-        	HTTPRequest newreq = new HTTPRequest(name, pass);
-    		session.setAttribute("userName", request.getParameter("name"));
-    		session.setAttribute("password", request.getParameter("pass"));
 
+
+
+		if (session.isNew()){
+			out.println("<h2> Invalid Session </h2>");
+		}else{
+			String pass = (String) session.getAttribute("username");
+			String uname = (String) session.getAttribute("password");
+        	HTTPRequest newreq = new HTTPRequest(uname, pass);
         	String respStr = new String();
-        	try {
-        		respStr = newreq.sendGet("https://dts-stg.autodesk.com/rest/api/2/issue/" + index);
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			if (param.equals("issue")){
+	        	try {
+	        		respStr = newreq.sendGet("https://dts-stg.autodesk.com/rest/api/2/issue/" + index);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
     		JsonObject result = new JsonParser().parse(respStr).getAsJsonObject();
     		String creationTime = result.get("fields").getAsJsonObject().get("created").toString();
@@ -106,15 +79,13 @@ public class ServletMain extends HttpServlet {
     		}
 
     		String resolutiondate = new String();
+    		String htmlResponse = new String();
     		resolutiondate = result.get("fields").getAsJsonObject().get("resolutiondate").toString();
     		System.out.println(resolutiondate);
     		DateFormat formater = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
 
-        	
-	        //htmlResponse += "<h2>Your username is: " + name + "<br/>";      
-	        //htmlResponse += "Your password is: " + pass + "<br/>"; 
-	        htmlResponse += "<h2>The entry you are looking into is: " + index + "<h2/>";
+  	        htmlResponse += "<h2>The entry you are looking into is: " + index + "<h2/>";
 	        htmlResponse += "<p>" + creationTime + "</p>";
 	        htmlResponse += "<p>" + status + "</p>";
 	        htmlResponse += "<p>" + "Is escalated: " + isEscalated + "</p>";
@@ -139,8 +110,19 @@ public class ServletMain extends HttpServlet {
 	        htmlResponse += "</html>";
 	         
 	        // return response
-	        writer.println(htmlResponse);
-        }
+	        out.println(htmlResponse);
+			
+		}
+		// TODO Auto-generated method stub
+		response.getWriter().append("Served at: ").append(request.getContextPath());
+	}
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		doGet(request, response);
 	}
 
 }
